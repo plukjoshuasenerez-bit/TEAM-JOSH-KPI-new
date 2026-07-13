@@ -27,6 +27,31 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;bord
 .medal.push{background:linear-gradient(135deg,#fca5a5,#ef4444,#991b1b);color:#fff}.medal.bronze{background:linear-gradient(135deg,#f5c08a,#b87333,#6d3f1d);color:#fff}.medal.silver{background:linear-gradient(135deg,#fff,#cfd4dc,#7d8490);color:#182033}.medal.gold{background:linear-gradient(135deg,#fff6bd,#d4af37,#9b720e);color:#2d2100}.medal.diamond{background:linear-gradient(135deg,#fff,#b9f3ff,#4b8fb5);color:#073344}
 .score-head{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center}.small{font-size:12px;color:var(--muted)}.notice{padding:10px 12px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-weight:700;margin-bottom:12px}.hidden{display:none!important}
 @media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.nav{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}.charts{grid-template-columns:1fr}.main{padding:14px}.score-head{grid-template-columns:1fr}}
+
+/* ===== Agent Entry Form (shareable link view) ===== */
+#agentPortal{display:none;min-height:100vh;padding:26px 14px 60px;background:linear-gradient(180deg,var(--bg) 0%,#fff 240px)}
+body.agent-mode .app{display:none}
+body.agent-mode #agentPortal{display:block}
+.portal-wrap{max-width:640px;margin:0 auto}
+.portal-brand{text-align:center;margin-bottom:16px}
+.portal-brand img{display:none;width:150px;height:90px;object-fit:contain;margin:0 auto 10px}
+.portal-brand h1{margin:0;font-size:24px;color:var(--navy);letter-spacing:.3px}
+.portal-brand p{margin:5px 0 0;color:var(--muted);font-size:12px;font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+.totals-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.total-tile{background:linear-gradient(135deg,var(--navy),var(--navy2));color:#fff;border-radius:18px;padding:16px 18px;text-align:center;box-shadow:0 10px 24px rgba(0,109,120,.22)}
+.total-tile strong{display:block;font-size:30px;line-height:1.1}
+.total-tile span{font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;opacity:.9}
+.total-tile em{display:block;font-style:normal;font-size:10px;opacity:.75;margin-top:3px}
+.act-list{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+.act-row{display:grid;grid-template-columns:1fr 96px 84px;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.act-row .act-name{font-weight:800;font-size:14px}
+.act-row .act-pts{font-size:11px;color:var(--muted);display:block;font-weight:700}
+.act-row input{margin-top:0;text-align:center;font-weight:800}
+.act-row .act-total{text-align:right;font-weight:900;color:var(--navy);font-size:15px}
+.portal-actions{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:var(--green);color:#fff;padding:13px 22px;border-radius:999px;font-weight:900;font-size:14px;box-shadow:0 12px 30px rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:.3s ease;z-index:999}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+@media(max-width:520px){.act-row{grid-template-columns:1fr 78px 70px}.totals-bar{grid-template-columns:1fr 1fr}.total-tile strong{font-size:24px}}
 </style>
 </head>
 <body>
@@ -49,7 +74,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;bord
 <main class="main">
   <div class="topbar">
     <div><h1 id="pageTitle">KPI Dashboard</h1><p id="appSubtitle">Independent KPI application</p></div>
-    <div class="actions"></div>
+    <div class="actions"><button class="btn2" onclick="copyAgentLink()">Copy Agent Form Link</button><button class="ghost" onclick="openAgentForm()">Open Agent Form</button></div>
   </div>
 
   <section id="dashboard" class="page active">
@@ -108,7 +133,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;bord
     </div>
     <datalist id="agentList"></datalist>
     <div class="card"><div class="actions"><button class="btn2" onclick="exportCsv()">Download CSV</button><button class="ghost" onclick="clearRecords()">Clear All Records</button></div></div>
-    <div class="card"><div class="tablebox"><table><thead><tr><th>Date</th><th>Agent</th><th>Activity</th><th>Count</th><th>Points</th><th>Notes</th><th>Action</th></tr></thead><tbody id="recordsRows"></tbody></table></div></div>
+    <div class="card"><div class="tablebox"><table><thead><tr><th>Date</th><th>Agent</th><th>Status</th><th>Activity</th><th>Count</th><th>Points</th><th>Notes</th><th>Action</th></tr></thead><tbody id="recordsRows"></tbody></table></div></div>
   </section>
 
   <section id="activities" class="page">
@@ -137,6 +162,8 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;bord
         <div><label>Accent Color<input type="color" id="accentColor" value="#dff7fa" oninput="previewBranding()"></label></div>
         <div><label>Action Color<input type="color" id="actionColor" value="#008896" oninput="previewBranding()"></label></div>
         <div><label>Base Daily Target<input type="number" id="baseTarget" min="1" value="150"></label></div>
+        <div><label>Challenge Start Date<input type="date" id="challengeStart"></label></div>
+        <div><label>Challenge End Date<input type="date" id="challengeEnd"></label></div>
         <div><button class="btn" onclick="saveSettings()">Save Settings</button></div>
         <div><button class="ghost" onclick="resetBranding()">Reset Branding</button></div>
       </div>
@@ -144,6 +171,47 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;bord
   </section>
 </main>
 </div>
+
+<!-- ===== AGENT ENTRY FORM (shareable link: add ?view=agent to URL) ===== -->
+<div id="agentPortal">
+  <div class="portal-wrap">
+    <div class="portal-brand">
+      <img id="portalLogo" alt="Team Logo">
+      <h1 id="portalTitle">TEAM JOSH</h1>
+      <p>Activity Tracker</p>
+    </div>
+
+    <div class="totals-bar">
+      <div class="total-tile"><strong id="afTodayPts">0</strong><span>Today's Points</span><em id="afTodayDate"></em></div>
+      <div class="total-tile"><strong id="afWeekPts">0</strong><span>Running Total</span><em id="afWeekRange"></em></div>
+    </div>
+
+    <div class="card">
+      <div class="grid">
+        <div><label>Name<input id="afName" list="afAgentList" placeholder="Enter your name" oninput="updateFormTotals()"></label><datalist id="afAgentList"></datalist></div>
+        <div><label>Date<input type="date" id="afDate" onchange="updateFormTotals()"></label></div>
+        <div><label>Status<select id="afStatus"><option>Full-time</option><option>Part-time</option><option>Rookie</option></select></label></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3 style="margin:4px 0 2px">Activities</h3>
+      <div class="small">Enter the number of activities only — points are computed automatically.</div>
+      <div class="act-list" id="afActList"></div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding:12px;border-radius:12px;background:var(--gold)">
+        <span style="font-weight:900">Points this entry</span>
+        <span id="afEntryPts" style="font-weight:900;font-size:20px;color:var(--navy)">0</span>
+      </div>
+    </div>
+
+    <div class="portal-actions">
+      <button class="btn" onclick="submitAgentForm()">Submit Activities</button>
+      <button class="ghost" onclick="viewDashboard()">View Dashboard</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast">Saved!</div>
+
 <script>
 const KEYS={records:'TJ_KPI_STANDALONE_RECORDS_V1',activities:'TJ_KPI_STANDALONE_ACTIVITIES_V1',settings:'TJ_KPI_STANDALONE_SETTINGS_V1'};
 const defaultActivities=[['Client Servicing',10],['Prospecting',1],['Client Presentation',50],['Selling Approach',1],['Recruitment',10],['Closing',100],['Training',5],['Branding',1],['Engage',1],['Setting Appointment',10]];
@@ -175,7 +243,7 @@ let byAct={};rows.forEach(r=>byAct[r.activity]=(byAct[r.activity]||0)+Number(r.p
 agentMessage.value=a?`Hi ${a}, your KPI performance for the selected period is ${pct.toFixed(1)}%. You earned ${points.toLocaleString()} points against a target of ${target.toLocaleString()}. Your current level is ${l.name}. ${pct<30?'Let us push harder and focus on consistent daily activities.':pct<71?'Good progress. Keep building your daily activity volume.':pct<150?'Great work. Maintain the momentum and aim for Diamond.':'Excellent work! You reached Diamond level. Keep leading by example.'}`:'';
 }
 function saveRecord(){let date=recDate.value,agent=recAgent.value.trim(),activity=recActivity.value,count=Number(recCount.value||0),notes=recNotes.value.trim(),cfg=getActivity(activity);if(!date||!agent||!activity||count<=0)return alert('Complete Date, Agent, Activity, and Count.');let id=[date,norm(agent),norm(activity),count,norm(notes)].join('|');if(records.some(r=>r.key===id))return alert('Duplicate record detected.');let row={id:uid(),key:id,date,agent,activity,count,points:count*Number(cfg?.points||0),notes};records.push(row);write(KEYS.records,records);recNotes.value='';renderAll()}
-function renderRecords(){recordsRows.innerHTML=records.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.agent)}</td><td>${esc(r.activity)}</td><td>${r.count}</td><td>${r.points}</td><td>${esc(r.notes)}</td><td><button class="danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`).join('')}
+function renderRecords(){recordsRows.innerHTML=records.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.agent)}</td><td>${esc(r.status||'')}</td><td>${esc(r.activity)}</td><td>${r.count}</td><td>${r.points}</td><td>${esc(r.notes)}</td><td><button class="danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`).join('')}
 function deleteRecord(id){records=records.filter(r=>r.id!==id);write(KEYS.records,records);renderAll()}
 function clearRecords(){if(confirm('Clear all standalone KPI records?')){records=[];write(KEYS.records,records);renderAll()}}
 function addActivity(){let name=activityName.value.trim(),points=Number(activityPoints.value);if(!name||points<0)return alert('Enter activity name and points.');if(activities.some(a=>norm(a.name)===norm(name)))return alert('Activity already exists.');activities.push({name,points});write(KEYS.activities,activities);activityName.value='';activityPoints.value='';renderAll()}
@@ -210,7 +278,7 @@ function previewLogo(ev){
   reader.readAsDataURL(file);
 }
 function saveSettings(){
-  settings={...settings,baseTarget:Number(baseTarget.value||150),kpiName:kpiName.value.trim()||'TEAM JOSH KPI',kpiSubtitle:kpiSubtitle.value.trim()||'KPI MONITORING SYSTEM',primaryColor:primaryColor.value,secondaryColor:secondaryColor.value,accentColor:accentColor.value,actionColor:actionColor.value};
+  settings={...settings,baseTarget:Number(baseTarget.value||150),kpiName:kpiName.value.trim()||'TEAM JOSH KPI',kpiSubtitle:kpiSubtitle.value.trim()||'KPI MONITORING SYSTEM',primaryColor:primaryColor.value,secondaryColor:secondaryColor.value,accentColor:accentColor.value,actionColor:actionColor.value,challengeStart:challengeStart.value||'',challengeEnd:challengeEnd.value||''};
   write(KEYS.settings,settings);applyBranding();renderAll();alert('Branding and KPI settings saved.');
 }
 function resetBranding(){
@@ -218,12 +286,128 @@ function resetBranding(){
   write(KEYS.settings,settings);loadSettingsToForm();applyBranding();
 }
 function loadSettingsToForm(){
-  baseTarget.value=settings.baseTarget||150;kpiName.value=settings.kpiName||'TEAM JOSH KPI';kpiSubtitle.value=settings.kpiSubtitle||'KPI MONITORING SYSTEM';primaryColor.value=settings.primaryColor||'#006d78';secondaryColor.value=settings.secondaryColor||'#10aebe';accentColor.value=settings.accentColor||'#dff7fa';actionColor.value=settings.actionColor||'#008896';
+  baseTarget.value=settings.baseTarget||150;challengeStart.value=settings.challengeStart||'';challengeEnd.value=settings.challengeEnd||'';kpiName.value=settings.kpiName||'TEAM JOSH KPI';kpiSubtitle.value=settings.kpiSubtitle||'KPI MONITORING SYSTEM';primaryColor.value=settings.primaryColor||'#006d78';secondaryColor.value=settings.secondaryColor||'#10aebe';accentColor.value=settings.accentColor||'#dff7fa';actionColor.value=settings.actionColor||'#008896';
 }
 function copyMessage(){navigator.clipboard.writeText(agentMessage.value).then(()=>alert('Message copied.'))}
 async function downloadScorecardPdf(){let el=document.getElementById('scoreCapture'),canvas=await html2canvas(el,{scale:2,useCORS:true}),img=canvas.toDataURL('image/png'),{jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4'),w=190,h=canvas.height*w/canvas.width;pdf.addImage(img,'PNG',10,10,w,h);pdf.save((scoreAgent.value||'AGENT')+'_KPI_SCORECARD.pdf')}
 async function downloadDashboardPdf(){let el=document.getElementById('dashboard'),canvas=await html2canvas(el,{scale:2,useCORS:true}),img=canvas.toDataURL('image/png'),{jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4'),w=190,h=canvas.height*w/canvas.width;pdf.addImage(img,'PNG',10,10,w,h);pdf.save('TEAM_JOSH_KPI_DASHBOARD.pdf')}
-function init(){seedDates();loadSettingsToForm();applyBranding();renderAll()}
+/* ===== AGENT ENTRY FORM ===== */
+function challengeRange(){
+  // Use saved challenge range; default = current week (Mon-Sun)
+  let s=settings.challengeStart,e=settings.challengeEnd;
+  if(s&&e)return{s,e};
+  let now=new Date(),day=(now.getDay()+6)%7; // 0 = Monday
+  let mon=new Date(now);mon.setDate(now.getDate()-day);
+  let sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  return{s:mon.toISOString().slice(0,10),e:sun.toISOString().slice(0,10)};
+}
+function renderAgentForm(){
+  // Branding
+  portalTitle.textContent=settings.kpiName||'TEAM JOSH';
+  if(settings.logoData){portalLogo.src=settings.logoData;portalLogo.style.display='block'}else{portalLogo.removeAttribute('src');portalLogo.style.display='none'}
+  // Agent suggestions
+  let agents=[...new Set(records.map(r=>r.agent).filter(Boolean))].sort();
+  afAgentList.innerHTML=agents.map(a=>`<option value="${esc(a)}">`).join('');
+  // Default date = today
+  if(!afDate.value)afDate.value=new Date().toISOString().slice(0,10);
+  // Activity list from dashboard activities
+  afActList.innerHTML=activities.map((a,i)=>`
+    <div class="act-row">
+      <div><span class="act-name">${esc(a.name)}</span><span class="act-pts">${a.points} pt${a.points==1?'':'s'} each</span></div>
+      <input type="number" min="0" placeholder="0" id="afCount_${i}" oninput="updateFormTotals()">
+      <div class="act-total" id="afTot_${i}">0</div>
+    </div>`).join('');
+  updateFormTotals();
+}
+function pendingFormPoints(){
+  let total=0;
+  activities.forEach((a,i)=>{
+    let el=document.getElementById('afCount_'+i);if(!el)return;
+    let c=Number(el.value||0),pts=c>0?c*Number(a.points||0):0;
+    let tot=document.getElementById('afTot_'+i);if(tot)tot.textContent=pts.toLocaleString();
+    total+=pts;
+  });
+  return total;
+}
+function updateFormTotals(){
+  let pending=pendingFormPoints();
+  afEntryPts.textContent=pending.toLocaleString();
+  let name=afName.value.trim(),date=afDate.value||new Date().toISOString().slice(0,10);
+  let {s,e}=challengeRange();
+  let savedToday=0,savedWeek=0;
+  if(name){
+    records.forEach(r=>{
+      if(norm(r.agent)!==norm(name))return;
+      let p=Number(r.points||0);
+      if(r.date===date)savedToday+=p;
+      if(r.date>=s&&r.date<=e)savedWeek+=p;
+    });
+  }
+  let inWeek=date>=s&&date<=e;
+  afTodayPts.textContent=(savedToday+pending).toLocaleString();
+  afWeekPts.textContent=(savedWeek+(inWeek?pending:0)).toLocaleString();
+  afTodayDate.textContent=date;
+  afWeekRange.textContent=s+' → '+e;
+}
+function submitAgentForm(){
+  let name=afName.value.trim(),date=afDate.value,status=afStatus.value;
+  if(!name)return alert('Please enter your name.');
+  if(!date)return alert('Please select a date.');
+  let entries=[];
+  activities.forEach((a,i)=>{
+    let el=document.getElementById('afCount_'+i);if(!el)return;
+    let c=Number(el.value||0);
+    if(c>0)entries.push({activity:a.name,count:c,points:c*Number(a.points||0)});
+  });
+  if(!entries.length)return alert('Enter at least one activity count.');
+  entries.forEach(en=>{
+    // Merge with an existing same-day record for this agent + activity
+    let existing=records.find(r=>r.date===date&&norm(r.agent)===norm(name)&&norm(r.activity)===norm(en.activity));
+    if(existing){
+      existing.count=Number(existing.count||0)+en.count;
+      existing.points=Number(existing.points||0)+en.points;
+      existing.status=status;
+      existing.key=[date,norm(name),norm(en.activity),existing.count,norm(existing.notes||'')].join('|');
+    }else{
+      records.push({id:uid(),key:[date,norm(name),norm(en.activity),en.count,'',Date.now()].join('|'),date,agent:name,status,activity:en.activity,count:en.count,points:en.points,notes:''});
+    }
+  });
+  write(KEYS.records,records);
+  activities.forEach((a,i)=>{let el=document.getElementById('afCount_'+i);if(el)el.value=''});
+  renderAll();
+  updateFormTotals();
+  showToast('✓ Activities saved!');
+}
+function showToast(msg){
+  toast.textContent=msg;toast.classList.add('show');
+  clearTimeout(showToast._t);showToast._t=setTimeout(()=>toast.classList.remove('show'),2600);
+}
+function agentFormUrl(){
+  let u=new URL(location.href);u.searchParams.set('view','agent');u.hash='';return u.toString();
+}
+function copyAgentLink(){
+  let link=agentFormUrl();
+  navigator.clipboard.writeText(link).then(()=>showToast('✓ Agent form link copied!')).catch(()=>prompt('Copy this link:',link));
+}
+function openAgentForm(){
+  document.body.classList.add('agent-mode');
+  renderAgentForm();
+  history.replaceState(null,'',agentFormUrl());
+}
+function viewDashboard(){
+  document.body.classList.remove('agent-mode');
+  let u=new URL(location.href);u.searchParams.delete('view');
+  history.replaceState(null,'',u.toString());
+  renderAll();
+}
+
+function init(){
+  seedDates();loadSettingsToForm();applyBranding();renderAll();
+  if(new URLSearchParams(location.search).get('view')==='agent'){
+    document.body.classList.add('agent-mode');
+    renderAgentForm();
+  }
+}
 init();
 </script>
 </body>
