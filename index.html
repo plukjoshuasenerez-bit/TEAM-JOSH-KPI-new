@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TEAM JOSH KPI Monitoring v1.3</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{--navy:#006d78;--navy2:#10aebe;--gold:#dff7fa;--red:#008896;--bg:#eef6f8;--line:#d7e8eb;--text:#29434b;--muted:#71858c;--green:#138a36}
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--text)}
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}.sidebar{background:#fff;color:var(--text);padding:28px 18px 22px;position:sticky;top:0;height:100vh;border-right:1px solid var(--line);box-shadow:10px 0 30px rgba(0,109,120,.05)}
+.brand{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;width:100%;min-height:205px;padding:10px 8px 24px;margin-bottom:12px;border-bottom:1px solid var(--line)}.brand #brandLogo{display:none;width:190px;height:112px;object-fit:contain;object-position:center;border-radius:0;margin:0 auto 14px;background:transparent;padding:0;box-shadow:none}.brand #brandName{display:block;width:100%;font-size:22px;font-weight:900;line-height:1.12;letter-spacing:.2px;color:var(--navy);overflow-wrap:anywhere}.brand small{display:block;width:100%;color:var(--muted);font-size:12px;line-height:1.25;letter-spacing:1px;margin-top:7px;font-weight:800}
+.nav button{width:100%;border:0;background:transparent;color:#3b555d;text-align:left;padding:14px 16px;border-radius:14px;margin:6px 0;font-weight:800;cursor:pointer;transition:.18s ease}
+.nav button.active,.nav button:hover{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;box-shadow:0 10px 22px rgba(0,136,150,.18);transform:translateX(2px)}.main{padding:26px 28px;min-width:0}.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px;margin:-26px -28px 24px;padding:22px 28px;background:#fff;border-bottom:1px solid var(--line)}.topbar h1{margin:0;color:var(--navy)}.topbar p{margin:5px 0 0;color:var(--muted)}
+.page{display:none}.page.active{display:block}.card{background:#fff;border-radius:22px;padding:20px;margin-bottom:18px;border:1px solid var(--line);box-shadow:0 8px 24px rgba(0,109,120,.07)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:18px}.stat{background:linear-gradient(135deg,#fff 0%,#fff 72%,var(--gold) 72%,var(--gold) 100%);border-radius:20px;padding:18px;border:1px solid var(--line);box-shadow:0 7px 20px rgba(0,109,120,.07)}.stat strong{display:block;font-size:25px;color:var(--navy)}.stat span{font-size:12px;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}.charts{display:grid;grid-template-columns:repeat(2,minmax(320px,1fr));gap:16px}.full{grid-column:1/-1}
+label{font-size:12px;font-weight:800;color:#344054}input,select,textarea,button{width:100%;padding:10px;border:1px solid var(--line);border-radius:10px;margin-top:5px;font-size:14px}textarea{min-height:90px;resize:vertical}
+.btn{border:0;background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;font-weight:800;cursor:pointer}.btn2{border:0;background:var(--navy);color:#fff;font-weight:800;cursor:pointer}.ghost{background:#fff;color:var(--navy);border:1px solid var(--navy);font-weight:800;cursor:pointer}.danger{background:#ef4444;color:#fff;border:0;font-weight:800;cursor:pointer}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.actions button{width:auto;min-width:120px}.tablebox{overflow:auto;border:1px solid var(--line);border-radius:12px;max-height:460px}
+table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:10px;border-bottom:1px solid #edf0f5;text-align:left;vertical-align:top}th{background:linear-gradient(90deg,var(--navy),var(--navy2));color:#fff;position:sticky;top:0}tr:hover{background:#f8fafc}
+.badge{display:inline-flex;align-items:center;gap:7px;border-radius:999px;padding:6px 10px;font-size:12px;font-weight:900}.push{background:#fee2e2;color:#991b1b}.bronze{background:#f4c38a;color:#6b3b13}.silver{background:#e5e7eb;color:#374151}.gold{background:#fde68a;color:#713f12}.diamond{background:#cffafe;color:#155e75}
+.medal{width:74px;height:74px;border-radius:50%;display:grid;place-items:center;font-size:28px;font-weight:900;margin:auto;border:5px solid rgba(255,255,255,.75);box-shadow:inset 0 4px 10px rgba(255,255,255,.75),inset 0 -7px 12px rgba(0,0,0,.2),0 10px 25px rgba(7,26,51,.2)}
+.medal.push{background:linear-gradient(135deg,#fca5a5,#ef4444,#991b1b);color:#fff}.medal.bronze{background:linear-gradient(135deg,#f5c08a,#b87333,#6d3f1d);color:#fff}.medal.silver{background:linear-gradient(135deg,#fff,#cfd4dc,#7d8490);color:#182033}.medal.gold{background:linear-gradient(135deg,#fff6bd,#d4af37,#9b720e);color:#2d2100}.medal.diamond{background:linear-gradient(135deg,#fff,#b9f3ff,#4b8fb5);color:#073344}
+.score-head{display:grid;grid-template-columns:120px 1fr;gap:18px;align-items:center}.small{font-size:12px;color:var(--muted)}.notice{padding:10px 12px;border-radius:10px;background:#eff6ff;color:#1e3a8a;font-weight:700;margin-bottom:12px}.hidden{display:none!important}
+@media(max-width:900px){.app{grid-template-columns:1fr}.sidebar{position:relative;height:auto}.nav{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}.charts{grid-template-columns:1fr}.main{padding:14px}.score-head{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="brand">
+    <img id="brandLogo" alt="KPI Logo">
+    <span id="brandName">TEAM JOSH KPI</span>
+    <small id="brandSubtitle">KPI MONITORING SYSTEM</small>
+  </div>
+  <div class="nav">
+    <button class="active" data-page="dashboard">Dashboard</button>
+    <button data-page="scorecard">Agent Scorecard</button>
+    <button data-page="records">KPI Records</button>
+    <button data-page="activities">Activity Management</button>
+    <button data-page="reports">Reports</button>
+    <button data-page="settings">Settings</button>
+  </div>
+</aside>
+<main class="main">
+  <div class="topbar">
+    <div><h1 id="pageTitle">KPI Dashboard</h1><p id="appSubtitle">Independent KPI application</p></div>
+    <div class="actions"></div>
+  </div>
+
+  <section id="dashboard" class="page active">
+    <div class="grid card">
+      <div><label>Start Date<input type="date" id="dashStart" onchange="renderAll()"></label></div>
+      <div><label>End Date<input type="date" id="dashEnd" onchange="renderAll()"></label></div>
+      <div><label>Agent<select id="dashAgent" onchange="renderAll()"><option value="">All Agents</option></select></label></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><strong id="teamPoints">0</strong><span>Total Activity Points</span></div>
+      <div class="stat"><strong id="teamTarget">0</strong><span>Team Target</span></div>
+      <div class="stat"><strong id="teamPct">0%</strong><span>Team KPI Percentage</span></div>
+      <div class="stat"><strong id="agentCount">0</strong><span>Agents with Activity</span></div>
+    </div>
+    <div class="charts">
+      <div class="card"><h3>Agent Ranking</h3><canvas id="rankingChart"></canvas></div>
+      <div class="card"><h3>Medal Distribution</h3><canvas id="medalChart"></canvas></div>
+      <div class="card full"><h3>Monthly Performance</h3><canvas id="monthlyChart"></canvas></div>
+    </div>
+  </section>
+
+  <section id="scorecard" class="page">
+    <div class="card grid">
+      <div><label>Agent<select id="scoreAgent" onchange="renderScorecard()"></select></label></div>
+      <div><label>Start Date<input type="date" id="scoreStart" onchange="renderScorecard()"></label></div>
+      <div><label>End Date<input type="date" id="scoreEnd" onchange="renderScorecard()"></label></div>
+      <div><button class="btn2" onclick="downloadScorecardPdf()">Download PDF</button></div>
+    </div>
+    <div id="scoreCapture">
+      <div class="card score-head">
+        <div><div id="scoreMedal" class="medal push">☹</div></div>
+        <div><h2 id="scoreName">Select an agent</h2><div class="stats">
+          <div class="stat"><strong id="scorePoints">0</strong><span>Total Points</span></div>
+          <div class="stat"><strong id="scoreTarget">0</strong><span>Agent Target</span></div>
+          <div class="stat"><strong id="scorePct">0%</strong><span>KPI Percentage</span></div>
+          <div class="stat"><strong id="scoreLevel">Push Harder</strong><span>Performance Level</span></div>
+        </div></div>
+      </div>
+      <div class="charts">
+        <div class="card full"><h3>Monthly Bar Graph</h3><canvas id="scoreMonthlyChart"></canvas></div>
+        <div class="card"><h3>Activity Breakdown</h3><canvas id="activityChart"></canvas></div>
+        <div class="card"><h3>Ready-to-Send Message</h3><textarea id="agentMessage"></textarea><button class="btn2" onclick="copyMessage()">Copy Message</button></div>
+      </div>
+      <div class="card"><h3>Daily Activity Records</h3><div class="tablebox"><table><thead><tr><th>Date</th><th>Activity</th><th>Count</th><th>Points</th><th>Notes</th></tr></thead><tbody id="scoreRows"></tbody></table></div></div>
+    </div>
+  </section>
+
+  <section id="records" class="page">
+    <div class="card grid">
+      <div><label>Date<input type="date" id="recDate"></label></div>
+      <div><label>Agent<input id="recAgent" list="agentList"></label></div>
+      <div><label>Activity<select id="recActivity"></select></label></div>
+      <div><label>Count<input type="number" id="recCount" min="0" value="1"></label></div>
+      <div><label>Notes<input id="recNotes"></label></div>
+      <div><button class="btn" onclick="saveRecord()">Add Record</button></div>
+    </div>
+    <datalist id="agentList"></datalist>
+    <div class="card"><div class="actions"><button class="btn2" onclick="exportCsv()">Download CSV</button><button class="ghost" onclick="clearRecords()">Clear All Records</button></div></div>
+    <div class="card"><div class="tablebox"><table><thead><tr><th>Date</th><th>Agent</th><th>Activity</th><th>Count</th><th>Points</th><th>Notes</th><th>Action</th></tr></thead><tbody id="recordsRows"></tbody></table></div></div>
+  </section>
+
+  <section id="activities" class="page">
+    <div class="card grid">
+      <div><label>Activity Name<input id="activityName"></label></div>
+      <div><label>Points per Count<input type="number" id="activityPoints" min="0"></label></div>
+      <div><button class="btn" onclick="addActivity()">Add Activity</button></div>
+    </div>
+    <div class="card"><div class="tablebox"><table><thead><tr><th>Activity</th><th>Points</th><th>Actions</th></tr></thead><tbody id="activityRows"></tbody></table></div></div>
+  </section>
+
+  <section id="reports" class="page">
+    <div class="card"><div class="actions"><button class="btn2" onclick="exportCsv()">Download All Records CSV</button><button class="btn2" onclick="downloadDashboardPdf()">Download Dashboard PDF</button></div></div>
+    <div class="card"><h3>Agent Performance Report</h3><div class="tablebox"><table><thead><tr><th>Rank</th><th>Agent</th><th>Points</th><th>Active Days</th><th>Target</th><th>KPI %</th><th>Level</th></tr></thead><tbody id="reportRows"></tbody></table></div></div>
+  </section>
+
+  <section id="settings" class="page">
+    <div class="card">
+      <div class="notice">The standalone app uses separate storage keys and will not modify Team Josh Monitoring data.</div>
+      <div class="grid">
+        <div><label>KPI App Name<input id="kpiName" placeholder="TEAM JOSH KPI"></label></div>
+        <div><label>KPI Subtitle<input id="kpiSubtitle" placeholder="KPI MONITORING SYSTEM"></label></div>
+        <div><label>Logo Image<input type="file" id="logoUpload" accept="image/*" onchange="previewLogo(event)"></label></div>
+        <div><label>Primary Color<input type="color" id="primaryColor" value="#006d78" oninput="previewBranding()"></label></div>
+        <div><label>Secondary Color<input type="color" id="secondaryColor" value="#10aebe" oninput="previewBranding()"></label></div>
+        <div><label>Accent Color<input type="color" id="accentColor" value="#dff7fa" oninput="previewBranding()"></label></div>
+        <div><label>Action Color<input type="color" id="actionColor" value="#008896" oninput="previewBranding()"></label></div>
+        <div><label>Base Daily Target<input type="number" id="baseTarget" min="1" value="150"></label></div>
+        <div><button class="btn" onclick="saveSettings()">Save Settings</button></div>
+        <div><button class="ghost" onclick="resetBranding()">Reset Branding</button></div>
+      </div>
+    </div>
+  </section>
+</main>
+</div>
+<script>
+const KEYS={records:'TJ_KPI_STANDALONE_RECORDS_V1',activities:'TJ_KPI_STANDALONE_ACTIVITIES_V1',settings:'TJ_KPI_STANDALONE_SETTINGS_V1'};
+const defaultActivities=[['Client Servicing',10],['Prospecting',1],['Client Presentation',50],['Selling Approach',1],['Recruitment',10],['Closing',100],['Training',5],['Branding',1],['Engage',1],['Setting Appointment',10]];
+let records=read(KEYS.records,[]),activities=read(KEYS.activities,defaultActivities.map(x=>({name:x[0],points:x[1]}))),settings=read(KEYS.settings,{baseTarget:150,kpiName:'TEAM JOSH KPI',kpiSubtitle:'KPI MONITORING SYSTEM',primaryColor:'#006d78',secondaryColor:'#10aebe',accentColor:'#dff7fa',actionColor:'#008896',logoData:''});
+let charts={};
+function read(k,f){try{return JSON.parse(localStorage.getItem(k))??f}catch(e){return f}}function write(k,v){localStorage.setItem(k,JSON.stringify(v))}
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function norm(v){return String(v??'').trim().toLowerCase().replace(/\s+/g,' ')}
+function uid(){return 'KPI_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,8)}
+function isoDate(v){if(!v)return '';let d=new Date(v);if(isNaN(d))return String(v).slice(0,10);return d.toISOString().slice(0,10)}
+function getActivity(name){return activities.find(a=>norm(a.name)===norm(name))}
+function calcLevel(p){if(p<30)return {name:'Push Harder',cls:'push',icon:'☹'};if(p<=50)return{name:'Bronze',cls:'bronze',icon:'★'};if(p<=70)return{name:'Silver',cls:'silver',icon:'★'};if(p<150)return{name:'Gold',cls:'gold',icon:'★'};return{name:'Diamond',cls:'diamond',icon:'◆'}}
+function inRange(r,s,e){return (!s||r.date>=s)&&(!e||r.date<=e)}
+function uniqueDays(rows){return new Set(rows.map(r=>r.date).filter(Boolean)).size}
+function filterRows(s,e,a){return records.filter(r=>inRange(r,s,e)&&(!a||norm(r.agent)===norm(a)))}
+function destroyChart(k){if(charts[k]){charts[k].destroy();delete charts[k]}}
+document.querySelectorAll('.nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));document.getElementById(b.dataset.page).classList.add('active');document.getElementById('pageTitle').textContent=b.textContent;if(b.dataset.page==='scorecard')renderScorecard();if(b.dataset.page==='reports')renderReports()});
+function seedDates(){let now=new Date(),first=new Date(now.getFullYear(),now.getMonth(),1).toISOString().slice(0,10),today=now.toISOString().slice(0,10);['dashStart','scoreStart'].forEach(id=>document.getElementById(id).value=first);['dashEnd','scoreEnd','recDate'].forEach(id=>document.getElementById(id).value=today)}
+function renderSelectors(){let agents=[...new Set(records.map(r=>r.agent).filter(Boolean))].sort();['dashAgent','scoreAgent'].forEach(id=>{let el=document.getElementById(id),val=el.value;el.innerHTML=(id==='dashAgent'?'<option value="">All Agents</option>':'<option value="">Select Agent</option>')+agents.map(a=>`<option ${a===val?'selected':''}>${esc(a)}</option>`).join('')});document.getElementById('agentList').innerHTML=agents.map(a=>`<option value="${esc(a)}">`).join('');document.getElementById('recActivity').innerHTML=activities.map(a=>`<option>${esc(a.name)}</option>`).join('')}
+function renderAll(){renderSelectors();renderDashboard();renderRecords();renderActivities();renderReports()}
+function renderDashboard(){let s=dashStart.value,e=dashEnd.value,a=dashAgent.value,rows=filterRows(s,e,a);let agents={};rows.forEach(r=>(agents[r.agent]??=[]).push(r));let summaries=Object.entries(agents).map(([name,rs])=>{let points=rs.reduce((t,r)=>t+Number(r.points||0),0),days=uniqueDays(rs),target=Number(settings.baseTarget||150)*days,pct=target?points/target*100:0;return{name,points,days,target,pct,level:calcLevel(pct)}}).sort((x,y)=>y.pct-x.pct);let totalPoints=rows.reduce((t,r)=>t+Number(r.points||0),0),totalTarget=summaries.reduce((t,x)=>t+x.target,0),pct=totalTarget?totalPoints/totalTarget*100:0;teamPoints.textContent=totalPoints.toLocaleString();teamTarget.textContent=totalTarget.toLocaleString();teamPct.textContent=pct.toFixed(1)+'%';agentCount.textContent=summaries.length;
+destroyChart('ranking');charts.ranking=new Chart(rankingChart,{type:'bar',data:{labels:summaries.map(x=>x.name),datasets:[{label:'KPI %',data:summaries.map(x=>x.pct.toFixed(1))}]},options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true}}}});
+let levels=['Push Harder','Bronze','Silver','Gold','Diamond'];destroyChart('medal');charts.medal=new Chart(medalChart,{type:'doughnut',data:{labels:levels,datasets:[{data:levels.map(l=>summaries.filter(x=>x.level.name===l).length)}]},options:{responsive:true}});
+let months={};rows.forEach(r=>{let m=r.date.slice(0,7);months[m]=(months[m]||0)+Number(r.points||0)});destroyChart('monthly');charts.monthly=new Chart(monthlyChart,{type:'line',data:{labels:Object.keys(months).sort(),datasets:[{label:'Points',data:Object.keys(months).sort().map(m=>months[m])}]},options:{responsive:true}});
+}
+function renderScorecard(){let a=scoreAgent.value,s=scoreStart.value,e=scoreEnd.value,rows=filterRows(s,e,a),points=rows.reduce((t,r)=>t+Number(r.points||0),0),days=uniqueDays(rows),target=Number(settings.baseTarget||150)*days,pct=target?points/target*100:0,l=calcLevel(pct);scoreName.textContent=a||'Select an agent';scorePoints.textContent=points.toLocaleString();scoreTarget.textContent=target.toLocaleString();scorePct.textContent=pct.toFixed(1)+'%';scoreLevel.textContent=l.name;scoreMedal.className='medal '+l.cls;scoreMedal.textContent=l.icon;scoreRows.innerHTML=rows.sort((x,y)=>y.date.localeCompare(x.date)).map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.activity)}</td><td>${r.count}</td><td>${r.points}</td><td>${esc(r.notes)}</td></tr>`).join('');
+let monthly={};rows.forEach(r=>monthly[r.date.slice(0,7)]=(monthly[r.date.slice(0,7)]||0)+Number(r.points||0));destroyChart('scoreMonthly');charts.scoreMonthly=new Chart(scoreMonthlyChart,{type:'bar',data:{labels:Object.keys(monthly).sort(),datasets:[{label:'Points',data:Object.keys(monthly).sort().map(m=>monthly[m])}]},options:{responsive:true}});
+let byAct={};rows.forEach(r=>byAct[r.activity]=(byAct[r.activity]||0)+Number(r.points||0));destroyChart('activity');charts.activity=new Chart(activityChart,{type:'doughnut',data:{labels:Object.keys(byAct),datasets:[{data:Object.values(byAct)}]},options:{responsive:true}});
+agentMessage.value=a?`Hi ${a}, your KPI performance for the selected period is ${pct.toFixed(1)}%. You earned ${points.toLocaleString()} points against a target of ${target.toLocaleString()}. Your current level is ${l.name}. ${pct<30?'Let us push harder and focus on consistent daily activities.':pct<71?'Good progress. Keep building your daily activity volume.':pct<150?'Great work. Maintain the momentum and aim for Diamond.':'Excellent work! You reached Diamond level. Keep leading by example.'}`:'';
+}
+function saveRecord(){let date=recDate.value,agent=recAgent.value.trim(),activity=recActivity.value,count=Number(recCount.value||0),notes=recNotes.value.trim(),cfg=getActivity(activity);if(!date||!agent||!activity||count<=0)return alert('Complete Date, Agent, Activity, and Count.');let id=[date,norm(agent),norm(activity),count,norm(notes)].join('|');if(records.some(r=>r.key===id))return alert('Duplicate record detected.');let row={id:uid(),key:id,date,agent,activity,count,points:count*Number(cfg?.points||0),notes};records.push(row);write(KEYS.records,records);recNotes.value='';renderAll()}
+function renderRecords(){recordsRows.innerHTML=records.slice().sort((a,b)=>b.date.localeCompare(a.date)).map(r=>`<tr><td>${esc(r.date)}</td><td>${esc(r.agent)}</td><td>${esc(r.activity)}</td><td>${r.count}</td><td>${r.points}</td><td>${esc(r.notes)}</td><td><button class="danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`).join('')}
+function deleteRecord(id){records=records.filter(r=>r.id!==id);write(KEYS.records,records);renderAll()}
+function clearRecords(){if(confirm('Clear all standalone KPI records?')){records=[];write(KEYS.records,records);renderAll()}}
+function addActivity(){let name=activityName.value.trim(),points=Number(activityPoints.value);if(!name||points<0)return alert('Enter activity name and points.');if(activities.some(a=>norm(a.name)===norm(name)))return alert('Activity already exists.');activities.push({name,points});write(KEYS.activities,activities);activityName.value='';activityPoints.value='';renderAll()}
+function renderActivities(){activityRows.innerHTML=activities.map((a,i)=>`<tr><td><input value="${esc(a.name)}" onchange="editActivity(${i},'name',this.value)"></td><td><input type="number" min="0" value="${a.points}" onchange="editActivity(${i},'points',this.value)"></td><td><button class="danger" onclick="removeActivity(${i})">Delete</button></td></tr>`).join('')}
+function editActivity(i,k,v){activities[i][k]=k==='points'?Number(v):v.trim();write(KEYS.activities,activities);renderSelectors()}
+function removeActivity(i){if(confirm('Delete this activity? Existing records will stay unchanged.')){activities.splice(i,1);write(KEYS.activities,activities);renderAll()}}
+function renderReports(){let s=dashStart.value,e=dashEnd.value,rows=filterRows(s,e,'');let groups={};rows.forEach(r=>(groups[r.agent]??=[]).push(r));let list=Object.entries(groups).map(([agent,rs])=>{let points=rs.reduce((t,r)=>t+Number(r.points||0),0),days=uniqueDays(rs),target=days*Number(settings.baseTarget||150),pct=target?points/target*100:0;return{agent,points,days,target,pct,level:calcLevel(pct)}}).sort((a,b)=>b.pct-a.pct);reportRows.innerHTML=list.map((x,i)=>`<tr><td>${i+1}</td><td>${esc(x.agent)}</td><td>${x.points}</td><td>${x.days}</td><td>${x.target}</td><td>${x.pct.toFixed(1)}%</td><td><span class="badge ${x.level.cls}">${x.level.name}</span></td></tr>`).join('')}
+function exportCsv(){let csv=Papa.unparse(records);downloadBlob(csv,'TEAM_JOSH_KPI_RECORDS.csv','text/csv')}
+function downloadBlob(data,name,type){let a=document.createElement('a');a.href=URL.createObjectURL(new Blob([data],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500)}
+function applyBranding(){
+  document.documentElement.style.setProperty('--navy',settings.primaryColor||'#006d78');
+  document.documentElement.style.setProperty('--navy2',settings.secondaryColor||'#10aebe');
+  document.documentElement.style.setProperty('--gold',settings.accentColor||'#dff7fa');
+  document.documentElement.style.setProperty('--red',settings.actionColor||'#008896');
+  brandName.textContent=settings.kpiName||'TEAM JOSH KPI';
+  brandSubtitle.textContent=settings.kpiSubtitle||'KPI MONITORING SYSTEM';
+  appSubtitle.textContent=(settings.kpiName||'KPI')+' standalone monitoring application';
+  document.title=settings.kpiName||'KPI Monitoring';
+  if(settings.logoData){brandLogo.src=settings.logoData;brandLogo.style.display='block'}else{brandLogo.removeAttribute('src');brandLogo.style.display='none'}
+}
+function previewBranding(){
+  document.documentElement.style.setProperty('--navy',primaryColor.value);
+  document.documentElement.style.setProperty('--navy2',secondaryColor.value);
+  document.documentElement.style.setProperty('--gold',accentColor.value);
+  document.documentElement.style.setProperty('--red',actionColor.value);
+}
+function previewLogo(ev){
+  const file=ev.target.files&&ev.target.files[0];
+  if(!file)return;
+  const reader=new FileReader();
+  reader.onload=()=>{settings.logoData=reader.result;brandLogo.src=reader.result;brandLogo.style.display='block'};
+  reader.readAsDataURL(file);
+}
+function saveSettings(){
+  settings={...settings,baseTarget:Number(baseTarget.value||150),kpiName:kpiName.value.trim()||'TEAM JOSH KPI',kpiSubtitle:kpiSubtitle.value.trim()||'KPI MONITORING SYSTEM',primaryColor:primaryColor.value,secondaryColor:secondaryColor.value,accentColor:accentColor.value,actionColor:actionColor.value};
+  write(KEYS.settings,settings);applyBranding();renderAll();alert('Branding and KPI settings saved.');
+}
+function resetBranding(){
+  settings={...settings,kpiName:'TEAM JOSH KPI',kpiSubtitle:'KPI MONITORING SYSTEM',primaryColor:'#006d78',secondaryColor:'#10aebe',accentColor:'#dff7fa',actionColor:'#008896',logoData:''};
+  write(KEYS.settings,settings);loadSettingsToForm();applyBranding();
+}
+function loadSettingsToForm(){
+  baseTarget.value=settings.baseTarget||150;kpiName.value=settings.kpiName||'TEAM JOSH KPI';kpiSubtitle.value=settings.kpiSubtitle||'KPI MONITORING SYSTEM';primaryColor.value=settings.primaryColor||'#006d78';secondaryColor.value=settings.secondaryColor||'#10aebe';accentColor.value=settings.accentColor||'#dff7fa';actionColor.value=settings.actionColor||'#008896';
+}
+function copyMessage(){navigator.clipboard.writeText(agentMessage.value).then(()=>alert('Message copied.'))}
+async function downloadScorecardPdf(){let el=document.getElementById('scoreCapture'),canvas=await html2canvas(el,{scale:2,useCORS:true}),img=canvas.toDataURL('image/png'),{jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4'),w=190,h=canvas.height*w/canvas.width;pdf.addImage(img,'PNG',10,10,w,h);pdf.save((scoreAgent.value||'AGENT')+'_KPI_SCORECARD.pdf')}
+async function downloadDashboardPdf(){let el=document.getElementById('dashboard'),canvas=await html2canvas(el,{scale:2,useCORS:true}),img=canvas.toDataURL('image/png'),{jsPDF}=window.jspdf,pdf=new jsPDF('p','mm','a4'),w=190,h=canvas.height*w/canvas.width;pdf.addImage(img,'PNG',10,10,w,h);pdf.save('TEAM_JOSH_KPI_DASHBOARD.pdf')}
+function init(){seedDates();loadSettingsToForm();applyBranding();renderAll()}
+init();
+</script>
+</body>
+</html>
